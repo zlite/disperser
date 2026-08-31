@@ -19,6 +19,9 @@ into a water bath.
   requests a controlled stop, returns XY to the swish center, and raises Z.
 - **Button C — Pause/Resume:** immediately pauses or resumes step generation.
 
+After homing and parking complete, the display reads **“Parked. Ready to start
+dispersion”** and the machine enters the Ready state.
+
 Motor holding current remains enabled while the homed machine is Ready or
 Paused so CoreXY belt tension cannot pull the carriage away from its known
 position. Current is disabled after a failed Home or whenever position is no

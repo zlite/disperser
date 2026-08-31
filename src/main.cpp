@@ -485,7 +485,7 @@ bool performHome() {
     }
 
     g_homed = true;
-    Serial.println("HOME: parking complete");
+    Serial.println("Parked. Ready to start dispersion");
     return true;
 }
 
@@ -637,8 +637,7 @@ void drawScreen() {
     static uint32_t lastDraw = 0;
     static bool layoutDrawn = false;
     static DeviceState previousState = static_cast<DeviceState>(0xFF);
-    static bool homedDrawn = false;
-    static bool previousHomed = false;
+    static String previousMachineMessage;
     static String previousWifi;
     static String previousPosition;
     static String previousError;
@@ -702,13 +701,16 @@ void drawScreen() {
         previousPosition = currentPosition;
     }
 
-    if (!homedDrawn || g_homed != previousHomed) {
+    const String machineMessage =
+        state == DeviceState::Ready && g_homed
+            ? "Parked. Ready to start dispersion"
+            : (g_homed ? "Machine homed" : "Home required");
+    if (machineMessage != previousMachineMessage) {
         M5.Display.fillRect(10, 122, 300, 18, TFT_BLACK);
         M5.Display.setTextColor(TFT_WHITE, TFT_BLACK);
         M5.Display.setTextSize(1);
-        M5.Display.drawString(g_homed ? "Machine homed" : "Home required", 10, 122);
-        previousHomed = g_homed;
-        homedDrawn = true;
+        M5.Display.drawString(machineMessage, 10, 122);
+        previousMachineMessage = machineMessage;
     }
 
     if (g_zLimitState != previousZLimitState ||
