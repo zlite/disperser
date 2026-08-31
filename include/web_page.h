@@ -42,7 +42,7 @@ const char DISPERSER_WEB_PAGE[] PROGMEM = R"HTML(
 
   <section class="card metrics">
     <div class="metric"><div class="label">Address</div><div id="address" class="value">disperser.local</div></div>
-    <div class="metric"><div class="label">Z limit L0</div><div id="limit" class="value">—</div></div>
+    <div class="metric"><div class="label">Limits L0 / L1 / L2</div><div id="limit" class="value">—</div></div>
     <div class="metric"><div class="label">Position</div><div id="position" class="value">—</div></div>
     <div class="metric"><div class="label">Run time</div><div id="elapsed" class="value">0 / 0 s</div></div>
   </section>
@@ -127,7 +127,8 @@ async function refresh() {
     $('state').textContent = data.state;
     $('state').className = 'pill ' + (data.error ? 'error' : (data.moving ? 'run' : ''));
     $('address').textContent = 'disperser.local · ' + data.ip;
-    $('limit').textContent = data.limit < 0 ? 'Unknown' : (data.limit ? 'HIT' : 'Open');
+    const limitText = value => value < 0 ? '?' : (value ? 'HIT' : 'open');
+    $('limit').textContent = `Z ${limitText(data.limitZ)} · X ${limitText(data.limitX)} · Y ${limitText(data.limitY)}`;
     $('position').textContent = `X ${data.x.toFixed(1)} · Y ${data.y.toFixed(1)} · Z ${data.z.toFixed(1)} mm`;
     $('elapsed').textContent = `${data.elapsed} / ${data.activeDuration || data.duration} s`;
     $('start').textContent = data.moving ? 'Stop' : 'Start';

@@ -10,8 +10,8 @@ into a water bath.
 
 ## Controls
 
-- **Button A — Home:** raises Z until the L0 switch activates and assigns that
-  exact position as Z=0. X and Y do not move.
+- **Button A — Home:** homes Z to L0, physical X to L1, and physical Y to L2,
+  assigning each switch position as axis zero.
 - **Button B — Start/Stop:** starts the cycle after homing; during motion it
   requests a controlled stop, returns XY to the swish center, and raises Z.
 - **Button C — Pause/Resume:** immediately pauses or resumes step generation.
@@ -40,11 +40,13 @@ Combination runs both circle directions followed by both linear patterns.
 ## Required wiring
 
 Connect the two CoreXY motors to the module's X and Y motor outputs and the tray
-motor to Z. Connect the active-low (switch-to-ground) upper Z limit as follows:
+motor to Z. Connect active-low (switch-to-ground) limits as follows:
 
 | Module input | Function |
 | --- | --- |
 | L0 / P0 | Z upper limit |
+| L1 / P1 | Physical X home limit |
+| L2 / P2 | Physical Y home limit |
 
 The firmware uses the M5Stack-documented Basic Core pins:
 
@@ -63,7 +65,7 @@ The firmware uses the M5Stack-documented Basic Core pins:
    tray removed from the bath.
 4. Be ready to remove motor power. Press Home and verify that Z travels **up**.
    If not, power off and change `INVERT_MOTOR_Z`.
-5. Confirm L0 stops the upward Z homing move before testing Start.
+5. Confirm L0, L1, and L2 stop their respective homing moves before testing Start.
 6. Verify the CoreXY directions during a dry cycle and reverse the relevant
    motor direction settings if the circle motion is wrong.
 

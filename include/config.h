@@ -26,11 +26,16 @@ constexpr bool INVERT_MOTOR_B = false;
 // positive Z is downward here, so invert Z to make Home travel upward.
 constexpr bool INVERT_MOTOR_Z = true;
 
-// Z upper limit on the module's L0 input. The switch is expected to close to
-// GND. X and Y are not homed; their position when Start is pressed becomes the
-// center of the swish circle.
+// Active-low limit switches on the module inputs.
 constexpr uint8_t Z_LIMIT_INPUT = 0;
+constexpr uint8_t X_LIMIT_INPUT = 1;
+constexpr uint8_t Y_LIMIT_INPUT = 2;
 constexpr bool LIMITS_ACTIVE_LOW = true;
+
+// Initial direction assumptions for the first XY homing test. Toggle the
+// relevant value if an axis moves away from its switch.
+constexpr bool X_HOME_DIRECTION_POSITIVE = false;
+constexpr bool Y_HOME_DIRECTION_POSITIVE = false;
 
 // Motion calibration. Defaults assume a 200-step motor, 20-tooth GT2 pulley,
 // 2 mm belt pitch, and 1/8 microstepping.
@@ -39,9 +44,11 @@ constexpr float XY_STEPS_PER_MM = 80.0f;
 constexpr float Z_STEPS_PER_MM = 10.0f;
 
 constexpr float Z_HOME_TRAVEL_MM = 150.0f;
+constexpr float XY_HOME_TRAVEL_MM = 250.0f;
 // The working Entosieve motion starts at 50 steps/s. Keep Z at that same rate
 // because this controller currently has no acceleration ramp.
 constexpr float HOME_SPEED_MM_S = 5.0f;
+constexpr float XY_HOME_SPEED_MM_S = 2.0f;
 // Conservative starting speed because motion currently begins without an
 // acceleration ramp. Raise this after reliable CoreXY testing.
 constexpr float XY_SPEED_MM_S = 5.0f;

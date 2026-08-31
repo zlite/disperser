@@ -52,6 +52,8 @@ volatile float g_zMm = 0.0f;
 volatile float g_cycleCenterX = 0.0f;
 volatile float g_cycleCenterY = 0.0f;
 volatile int8_t g_zLimitState = -1;
+volatile int8_t g_xLimitState = -1;
+volatile int8_t g_yLimitState = -1;
 volatile MotionType g_motionType = MotionType::Circular;
 volatile float g_swishSpeedMmS = Config::DEFAULT_SWISH_SPEED_MM_S;
 volatile float g_swishSizeMm = Config::DEFAULT_SWISH_SIZE_MM;
@@ -99,6 +101,8 @@ class StepperModule {
         const bool high = module_.ext_io_status[input] != 0;
         const bool active = Config::LIMITS_ACTIVE_LOW ? !high : high;
         if (input == Config::Z_LIMIT_INPUT) g_zLimitState = active ? 1 : 0;
+        if (input == Config::X_LIMIT_INPUT) g_xLimitState = active ? 1 : 0;
+        if (input == Config::Y_LIMIT_INPUT) g_yLimitState = active ? 1 : 0;
         return active;
     }
 
@@ -326,8 +330,7 @@ bool performHome() {
         return false;
     }
 
-    // Home only Z: travel upward until the L0 switch closes, then define the
-    // exact switch position as Z=0. X and Y remain untouched.
+    // Home Z upward to L0 first.
     if (!homeOneAxis(Config::Z_LIMIT_INPUT, false, false, false, false,
                      true, false,
                      lroundf(Config::Z_HOME_TRAVEL_MM * Config::Z_STEPS_PER_MM),
@@ -337,8 +340,37 @@ bool performHome() {
     }
     g_motorZSteps = 0;
     g_zMm = 0;
-    g_homed = true;
     Serial.println("HOME: L0 hit; Z set to 0");
+
+    // This machine's observed physical axes are swapped relative to the
+    // logical CoreXY coordinates: physical X is logical Y (A/B opposite),
+    // while physical Y is logical X (A/B together).
+    const bool xPositive = Config::X_HOME_DIRECTION_POSITIVE;
+    if (!homeOneAxis(Config::X_LIMIT_INPUT,
+                     true, xPositive, true, !xPositive, false, false,
+                     lroundf(Config::XY_HOME_TRAVEL_MM * Config::XY_STEPS_PER_MM),
+                     Config::XY_HOME_SPEED_MM_S * Config::XY_STEPS_PER_MM)) {
+        Serial.println(g_stopRequested ? "HOME: stopped" : "HOME: L1 not reached");
+        return false;
+    }
+    Serial.println("HOME: L1 hit; physical X at 0");
+
+    const bool yPositive = Config::Y_HOME_DIRECTION_POSITIVE;
+    if (!homeOneAxis(Config::Y_LIMIT_INPUT,
+                     true, yPositive, true, yPositive, false, false,
+                     lroundf(Config::XY_HOME_TRAVEL_MM * Config::XY_STEPS_PER_MM),
+                     Config::XY_HOME_SPEED_MM_S * Config::XY_STEPS_PER_MM)) {
+        Serial.println(g_stopRequested ? "HOME: stopped" : "HOME: L2 not reached");
+        return false;
+    }
+    Serial.println("HOME: L2 hit; physical Y at 0");
+
+    g_motorASteps = 0;
+    g_motorBSteps = 0;
+    g_xMm = 0;
+    g_yMm = 0;
+    g_homed = true;
+    Serial.println("HOME: all axes set to 0");
     return true;
 }
 
@@ -483,7 +515,9 @@ void drawScreen() {
     static String previousWifi;
     static String previousPosition;
     static String previousError;
-    static int8_t previousLimitState = -2;
+    static int8_t previousZLimitState = -2;
+    static int8_t previousXLimitState = -2;
+    static int8_t previousYLimitState = -2;
     if (millis() - lastDraw < Config::DISPLAY_REFRESH_MS) return;
     lastDraw = millis();
 
@@ -550,23 +584,32 @@ void drawScreen() {
         homedDrawn = true;
     }
 
-    if (g_zLimitState != previousLimitState) {
-        M5.Display.fillRect(10, 145, 150, 18, TFT_BLACK);
-        M5.Display.setTextColor(g_zLimitState == 1 ? TFT_RED : TFT_WHITE, TFT_BLACK);
+    if (g_zLimitState != previousZLimitState ||
+        g_xLimitState != previousXLimitState ||
+        g_yLimitState != previousYLimitState) {
+        M5.Display.fillRect(10, 145, 300, 18, TFT_BLACK);
+        M5.Display.setTextColor((g_zLimitState == 1 || g_xLimitState == 1 ||
+                                 g_yLimitState == 1) ? TFT_RED : TFT_WHITE,
+                                TFT_BLACK);
         M5.Display.setTextSize(1);
-        M5.Display.drawString(g_zLimitState < 0 ? "L0: UNKNOWN"
-                                               : (g_zLimitState ? "L0: HIT" : "L0: OPEN"),
-                              10, 145);
-        previousLimitState = g_zLimitState;
+        char limits[64];
+        snprintf(limits, sizeof(limits), "L0 Z:%s   L1 X:%s   L2 Y:%s",
+                 g_zLimitState < 0 ? "?" : (g_zLimitState ? "HIT" : "open"),
+                 g_xLimitState < 0 ? "?" : (g_xLimitState ? "HIT" : "open"),
+                 g_yLimitState < 0 ? "?" : (g_yLimitState ? "HIT" : "open"));
+        M5.Display.drawString(limits, 10, 145);
+        previousZLimitState = g_zLimitState;
+        previousXLimitState = g_xLimitState;
+        previousYLimitState = g_yLimitState;
     }
 
     const String error = state == DeviceState::Error ? g_error : String();
     if (error != previousError) {
-        M5.Display.fillRect(160, 145, 150, 18, TFT_BLACK);
+        M5.Display.fillRect(10, 165, 300, 18, TFT_BLACK);
         if (!error.isEmpty()) {
             M5.Display.setTextColor(TFT_RED, TFT_BLACK);
             M5.Display.setTextSize(1);
-            M5.Display.drawString(error, 160, 145);
+            M5.Display.drawString(error, 10, 165);
         }
         previousError = error;
     }
@@ -631,6 +674,9 @@ String statusJson() {
     json += "\"error\":" + String(state == DeviceState::Error ? "true" : "false") + ",";
     json += "\"homed\":" + String(g_homed ? "true" : "false") + ",";
     json += "\"limit\":" + String(g_zLimitState) + ",";
+    json += "\"limitZ\":" + String(g_zLimitState) + ",";
+    json += "\"limitX\":" + String(g_xLimitState) + ",";
+    json += "\"limitY\":" + String(g_yLimitState) + ",";
     json += "\"x\":" + String(g_xMm, 2) + ",";
     json += "\"y\":" + String(g_yMm, 2) + ",";
     json += "\"z\":" + String(g_zMm, 2) + ",";
@@ -739,8 +785,10 @@ void setup() {
         g_state = DeviceState::NotHomed;
     }
 
-    // Read L0 while stationary so its wiring state is visible before Home.
+    // Read all limit inputs while stationary so wiring state is visible.
     g_driver.limitActive(Config::Z_LIMIT_INPUT);
+    g_driver.limitActive(Config::X_LIMIT_INPUT);
+    g_driver.limitActive(Config::Y_LIMIT_INPUT);
 
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(Config::MDNS_HOSTNAME);
@@ -764,6 +812,8 @@ void loop() {
     if (!isMoving(g_state) && millis() - lastLimitRead >= 250) {
         lastLimitRead = millis();
         g_driver.limitActive(Config::Z_LIMIT_INPUT);
+        g_driver.limitActive(Config::X_LIMIT_INPUT);
+        g_driver.limitActive(Config::Y_LIMIT_INPUT);
     }
     drawScreen();
 
