@@ -1,10 +1,5 @@
 # M5Stack Bug Disperser
 
-> **Temporary XY calibration mode:** pressing Home commands motor A positive
-> and motor B negative for one second at homing speed. This is the current
-> candidate for physical positive X; normal homing is disabled during this test.
-> The previous test confirmed A positive plus B positive is physical positive Y.
-
 Firmware for an M5Stack Basic Core and the **Module13.2 Stepmotor Driver
 (M039)**. It controls a CoreXY plotter and a third stepper that lowers a tray
 into a water bath.
@@ -17,7 +12,7 @@ into a water bath.
 
 - **Button A — Home:** homes Z to L0, physical X to L1, and physical Y to L2,
   assigns each switch position as axis zero, then parks XY at the provisional
-  logical center target `(80 mm, 100 mm)`, corresponding to physical Y and X.
+  physical center target `(100 mm, 80 mm)`.
   Before parking, each XY switch is released separately by 5 mm at homing
   speed. Parking directions are derived as the inverse of homing directions.
 - **Button B — Start/Stop:** starts the cycle after homing; during motion it

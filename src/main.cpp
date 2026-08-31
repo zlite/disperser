@@ -139,8 +139,8 @@ class StepperModule {
 
 StepperModule g_driver;
 
-// Current physical motor positions. In CoreXY coordinates:
-// A = X + Y and B = X - Y.
+// Current physical motor positions. Direction tests confirmed this machine's
+// CoreXY transform: A = X + Y and B = Y - X.
 int32_t g_motorASteps = 0;
 int32_t g_motorBSteps = 0;
 int32_t g_motorZSteps = 0;
@@ -292,7 +292,7 @@ bool moveRaw(int32_t targetA, int32_t targetB, int32_t targetZ,
 bool moveTo(float xMm, float yMm, float zMm, float speedMmS,
             DeviceState activeState, bool allowAbort = true) {
     const int32_t targetA = lroundf((xMm + yMm) * Config::XY_STEPS_PER_MM);
-    const int32_t targetB = lroundf((xMm - yMm) * Config::XY_STEPS_PER_MM);
+    const int32_t targetB = lroundf((yMm - xMm) * Config::XY_STEPS_PER_MM);
     const int32_t targetZ = lroundf(zMm * Config::Z_STEPS_PER_MM);
 
     // Make every segment take distance/speed seconds. This avoids the
@@ -311,8 +311,8 @@ bool moveTo(float xMm, float yMm, float zMm, float speedMmS,
     const bool ok = moveRaw(targetA, targetB, targetZ, stepRate,
                             activeState, allowAbort);
 
-    g_xMm = (g_motorASteps + g_motorBSteps) / (2.0f * Config::XY_STEPS_PER_MM);
-    g_yMm = (g_motorASteps - g_motorBSteps) / (2.0f * Config::XY_STEPS_PER_MM);
+    g_xMm = (g_motorASteps - g_motorBSteps) / (2.0f * Config::XY_STEPS_PER_MM);
+    g_yMm = (g_motorASteps + g_motorBSteps) / (2.0f * Config::XY_STEPS_PER_MM);
     g_zMm = g_motorZSteps / Config::Z_STEPS_PER_MM;
     return ok;
 }
@@ -372,9 +372,8 @@ bool performHome() {
     g_zMm = 0;
     Serial.println("HOME: L0 hit; Z set to 0");
 
-    // This machine's observed physical axes are swapped relative to the
-    // logical CoreXY coordinates: physical X is logical Y (A/B opposite),
-    // while physical Y is logical X (A/B together).
+    // Confirmed direction mapping: physical X uses A/B in opposite directions,
+    // while physical Y uses A/B together.
     const bool xPositive = Config::X_HOME_DIRECTION_POSITIVE;
     if (!homeOneAxis(Config::X_LIMIT_INPUT,
                      true, xPositive, true, !xPositive, false, false,
@@ -411,7 +410,7 @@ bool performHome() {
     // CoreXY park move. This removes corner preload and avoids asking both
     // belts to accelerate while the carriage is still against its end stops.
     Serial.println("HOME: releasing L1");
-    if (!moveTo(0, releaseY, 0, Config::XY_HOME_SPEED_MM_S,
+    if (!moveTo(releaseX, 0, 0, Config::XY_HOME_SPEED_MM_S,
                 DeviceState::Positioning)) {
         Serial.println("HOME: L1 release stopped");
         return false;
@@ -436,38 +435,6 @@ bool performHome() {
     g_homed = true;
     Serial.println("HOME: parking complete");
     return true;
-}
-
-bool performPositiveYDirectionTest() {
-    g_state = DeviceState::Positioning;
-    g_homed = false;
-    g_stopRequested = false;
-    g_pauseRequested = false;
-    g_error = "";
-    if (!g_driver.enable(true)) return false;
-
-    // CoreXY logical +Y is A+ and B-. Use a relative raw move so this test
-    // does not depend on the current coordinate estimate. The previous test
-    // confirmed A+/B+ is physical +Y on this machine.
-    const float stepRate = Config::XY_HOME_SPEED_MM_S *
-                           Config::XY_STEPS_PER_MM;
-    const int32_t steps = lroundf(stepRate *
-                                  Config::XY_DIRECTION_TEST_SECONDS);
-    Serial.printf("DIRECTION TEST: logical +Y for %.1f s: A+ B- (%ld steps)\n",
-                  Config::XY_DIRECTION_TEST_SECONDS,
-                  static_cast<long>(steps));
-    const bool ok = moveRaw(g_motorASteps + steps,
-                            g_motorBSteps - steps,
-                            g_motorZSteps, stepRate,
-                            DeviceState::Positioning);
-    g_xMm = (g_motorASteps + g_motorBSteps) /
-            (2.0f * Config::XY_STEPS_PER_MM);
-    g_yMm = (g_motorASteps - g_motorBSteps) /
-            (2.0f * Config::XY_STEPS_PER_MM);
-    g_state = DeviceState::NotHomed;
-    Serial.println(ok ? "DIRECTION TEST: complete" :
-                        "DIRECTION TEST: stopped");
-    return ok;
 }
 
 void safeStopAndRaise() {
@@ -521,10 +488,9 @@ bool runPattern(MotionType type, const CycleSettings& settings) {
         case MotionType::Circular:
             return runCircle(true, settings) && runCircle(false, settings);
         case MotionType::BackAndForth:
-            // Logical X corresponds to the observed front/back machine axis.
-            return runLinearPattern(settings.sizeMm, 0, settings);
-        case MotionType::SideToSide:
             return runLinearPattern(0, settings.sizeMm, settings);
+        case MotionType::SideToSide:
+            return runLinearPattern(settings.sizeMm, 0, settings);
         case MotionType::Combination:
             return runCircle(true, settings) && runCircle(false, settings) &&
                    runLinearPattern(settings.sizeMm, 0, settings) &&
@@ -581,12 +547,7 @@ void motionTask(void*) {
         uint32_t command = 0;
         xTaskNotifyWait(0, UINT32_MAX, &command, portMAX_DELAY);
         if (command == static_cast<uint32_t>(MotionCommand::Home)) {
-            if (Config::XY_DIRECTION_TEST_MODE) {
-                if (!performPositiveYDirectionTest()) {
-                    g_error = "Positive Y direction test stopped";
-                    g_state = DeviceState::Error;
-                }
-            } else if (performHome()) {
+            if (performHome()) {
                 g_state = DeviceState::Ready;
             } else if (g_stopRequested) {
                 g_stopRequested = false;

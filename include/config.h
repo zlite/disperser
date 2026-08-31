@@ -45,26 +45,20 @@ constexpr float Z_STEPS_PER_MM = 10.0f;
 
 constexpr float Z_HOME_TRAVEL_MM = 150.0f;
 constexpr float XY_HOME_TRAVEL_MM = 250.0f;
-// Provisional post-home park position. These distances use the initial
-// 80-steps/mm estimate and should be calibrated from measured travel.
-// Logical axes are swapped relative to the labels on the physical machine:
-// logical X controls physical Y, and logical Y controls physical X.
-constexpr float XY_PARK_X_MM = 80.0f;
-constexpr float XY_PARK_Y_MM = 100.0f;
+// Provisional post-home park position in physical machine coordinates. These
+// distances use the initial 80-steps/mm estimate.
+constexpr float XY_PARK_X_MM = 100.0f;
+constexpr float XY_PARK_Y_MM = 80.0f;
 constexpr float XY_SWITCH_RELEASE_MM = 5.0f;
 // Move away from the two switches using the inverse of each confirmed homing
-// direction. Physical Y maps to logical X; physical X maps to logical Y.
-constexpr float XY_PARK_X_DIRECTION = Y_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;
-constexpr float XY_PARK_Y_DIRECTION = X_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;
+// direction.
+constexpr float XY_PARK_X_DIRECTION = X_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;
+constexpr float XY_PARK_Y_DIRECTION = Y_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;
 // The working Entosieve motion starts at 50 steps/s. Keep Z at that same rate
 // because this controller currently has no acceleration ramp.
 constexpr float HOME_SPEED_MM_S = 5.0f;
 constexpr float XY_HOME_SPEED_MM_S = 2.0f;
 constexpr float XY_PARK_SPEED_MM_S = 5.0f;
-// Temporary calibration mode: Home performs a one-second logical +Y jog
-// instead of the normal homing sequence.
-constexpr bool XY_DIRECTION_TEST_MODE = true;
-constexpr float XY_DIRECTION_TEST_SECONDS = 1.0f;
 // Conservative starting speed because motion currently begins without an
 // acceleration ramp. Raise this after reliable CoreXY testing.
 constexpr float XY_SPEED_MM_S = 5.0f;
