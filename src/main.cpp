@@ -614,13 +614,16 @@ void motionTask(void*) {
             performCycle();
         }
 
-        // A command returns only after all requested motion has stopped. Drop
-        // the driver's global enable so the motors do not apply holding
-        // current while the machine is idle. Keep them energized while paused
-        // inside a command so the suspended tray cannot drift and lose its
-        // known position.
-        g_driver.enable(false);
-        Serial.println("MOTORS: idle holding current disabled");
+        // A tensioned CoreXY can back-drive when holding current is removed.
+        // Keep the motors energized after a successful Home or cycle so the
+        // carriage remains at its known park/center position. Disable them
+        // only when position is not trustworthy.
+        if (g_homed && g_state == DeviceState::Ready) {
+            Serial.println("MOTORS: holding parked position");
+        } else {
+            g_driver.enable(false);
+            Serial.println("MOTORS: current disabled; position not held");
+        }
     }
 }
 

@@ -19,9 +19,10 @@ into a water bath.
   requests a controlled stop, returns XY to the swish center, and raises Z.
 - **Button C — Pause/Resume:** immediately pauses or resumes step generation.
 
-Motor holding current is disabled after homing/parking and after a cycle has
-fully stopped. It remains enabled during Pause so the tray and carriage retain
-their known positions.
+Motor holding current remains enabled while the homed machine is Ready or
+Paused so CoreXY belt tension cannot pull the carriage away from its known
+position. Current is disabled after a failed Home or whenever position is no
+longer trustworthy.
 
 Homing stops on the first active limit-switch sample. Limit-register reads are
 retried, and motion aborts if the Module 13.2 cannot provide a valid reading;
