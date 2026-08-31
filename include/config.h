@@ -49,8 +49,10 @@ constexpr float XY_HOME_TRAVEL_MM = 250.0f;
 // 80-steps/mm estimate and should be calibrated from measured travel.
 constexpr float XY_PARK_X_MM = 50.0f;
 constexpr float XY_PARK_Y_MM = 50.0f;
-constexpr float XY_PARK_X_DIRECTION = 1.0f;
-constexpr float XY_PARK_Y_DIRECTION = -1.0f;
+// Move away from the two switches using the inverse of each confirmed homing
+// direction. Physical Y maps to logical X; physical X maps to logical Y.
+constexpr float XY_PARK_X_DIRECTION = Y_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;
+constexpr float XY_PARK_Y_DIRECTION = X_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;
 // The working Entosieve motion starts at 50 steps/s. Keep Z at that same rate
 // because this controller currently has no acceleration ramp.
 constexpr float HOME_SPEED_MM_S = 5.0f;

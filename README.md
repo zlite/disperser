@@ -12,7 +12,8 @@ into a water bath.
 
 - **Button A — Home:** homes Z to L0, physical X to L1, and physical Y to L2,
   assigns each switch position as axis zero, then parks XY at the provisional
-  center target `(50 mm, -50 mm)` using the current direction calibration.
+  center target `(50 mm, 50 mm)`. Its directions are derived as the inverse of
+  the corresponding homing directions so that both axes leave their switches.
 - **Button B — Start/Stop:** starts the cycle after homing; during motion it
   requests a controlled stop, returns XY to the swish center, and raises Z.
 - **Button C — Pause/Resume:** immediately pauses or resumes step generation.
