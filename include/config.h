@@ -45,10 +45,15 @@ constexpr float Z_STEPS_PER_MM = 10.0f;
 
 constexpr float Z_HOME_TRAVEL_MM = 150.0f;
 constexpr float XY_HOME_TRAVEL_MM = 250.0f;
+// Provisional post-home park position. These distances use the initial
+// 80-steps/mm estimate and should be calibrated from measured travel.
+constexpr float XY_PARK_X_MM = 50.0f;
+constexpr float XY_PARK_Y_MM = 50.0f;
 // The working Entosieve motion starts at 50 steps/s. Keep Z at that same rate
 // because this controller currently has no acceleration ramp.
 constexpr float HOME_SPEED_MM_S = 5.0f;
 constexpr float XY_HOME_SPEED_MM_S = 2.0f;
+constexpr float XY_PARK_SPEED_MM_S = 5.0f;
 // Conservative starting speed because motion currently begins without an
 // acceleration ramp. Raise this after reliable CoreXY testing.
 constexpr float XY_SPEED_MM_S = 5.0f;

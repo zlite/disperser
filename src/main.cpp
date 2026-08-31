@@ -369,8 +369,19 @@ bool performHome() {
     g_motorBSteps = 0;
     g_xMm = 0;
     g_yMm = 0;
-    g_homed = true;
     Serial.println("HOME: all axes set to 0");
+
+    g_state = DeviceState::Positioning;
+    Serial.printf("HOME: parking XY at %.1f, %.1f mm\n",
+                  Config::XY_PARK_X_MM, Config::XY_PARK_Y_MM);
+    if (!moveTo(Config::XY_PARK_X_MM, Config::XY_PARK_Y_MM, 0,
+                Config::XY_PARK_SPEED_MM_S, DeviceState::Positioning)) {
+        Serial.println("HOME: parking stopped");
+        return false;
+    }
+
+    g_homed = true;
+    Serial.println("HOME: parking complete");
     return true;
 }
 

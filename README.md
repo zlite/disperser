@@ -11,7 +11,8 @@ into a water bath.
 ## Controls
 
 - **Button A — Home:** homes Z to L0, physical X to L1, and physical Y to L2,
-  assigning each switch position as axis zero.
+  assigns each switch position as axis zero, then parks XY at the provisional
+  center position `(50 mm, 50 mm)`.
 - **Button B — Start/Stop:** starts the cycle after homing; during motion it
   requests a controlled stop, returns XY to the swish center, and raises Z.
 - **Button C — Pause/Resume:** immediately pauses or resumes step generation.
@@ -72,7 +73,8 @@ The firmware uses the M5Stack-documented Basic Core pins:
 The default `80` XY steps/mm assumes 200 full steps/revolution, 1/8
 microstepping, a 20-tooth pulley, and 2 mm GT2 belt pitch. Z uses the proven
 Entosieve baseline of 100 steps/cm (10 steps/mm), 50 steps/second, and a 10 us
-STEP pulse. Confirm and fine-tune that calibration on the actual lift.
+STEP pulse. The 50 mm XY park distances are provisional; measure the resulting
+physical travel to calibrate both steps/mm and the true machine center.
 
 ## Build and upload
 
