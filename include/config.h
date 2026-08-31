@@ -48,7 +48,7 @@ constexpr float XY_HOME_TRAVEL_MM = 250.0f;
 // Provisional post-home park position. These distances use the initial
 // 80-steps/mm estimate and should be calibrated from measured travel.
 constexpr float XY_PARK_X_MM = 100.0f;
-constexpr float XY_PARK_Y_MM = 100.0f;
+constexpr float XY_PARK_Y_MM = 80.0f;
 // Move away from the two switches using the inverse of each confirmed homing
 // direction. Physical Y maps to logical X; physical X maps to logical Y.
 constexpr float XY_PARK_X_DIRECTION = Y_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;

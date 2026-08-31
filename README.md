@@ -12,7 +12,7 @@ into a water bath.
 
 - **Button A — Home:** homes Z to L0, physical X to L1, and physical Y to L2,
   assigns each switch position as axis zero, then parks XY at the provisional
-  center target `(100 mm, 100 mm)`. Its directions are derived as the inverse of
+  center target `(100 mm, 80 mm)`. Its directions are derived as the inverse of
   the corresponding homing directions so that both axes leave their switches.
 - **Button B — Start/Stop:** starts the cycle after homing; during motion it
   requests a controlled stop, returns XY to the swish center, and raises Z.
