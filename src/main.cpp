@@ -372,6 +372,27 @@ bool performHome() {
     Serial.println("HOME: all axes set to 0");
 
     g_state = DeviceState::Positioning;
+    const float releaseX = Config::XY_PARK_X_DIRECTION *
+                           Config::XY_SWITCH_RELEASE_MM;
+    const float releaseY = Config::XY_PARK_Y_DIRECTION *
+                           Config::XY_SWITCH_RELEASE_MM;
+
+    // Leave each switch separately at homing speed before starting the longer
+    // CoreXY park move. This removes corner preload and avoids asking both
+    // belts to accelerate while the carriage is still against its end stops.
+    Serial.println("HOME: releasing L1");
+    if (!moveTo(0, releaseY, 0, Config::XY_HOME_SPEED_MM_S,
+                DeviceState::Positioning)) {
+        Serial.println("HOME: L1 release stopped");
+        return false;
+    }
+    Serial.println("HOME: releasing L2");
+    if (!moveTo(releaseX, releaseY, 0, Config::XY_HOME_SPEED_MM_S,
+                DeviceState::Positioning)) {
+        Serial.println("HOME: L2 release stopped");
+        return false;
+    }
+
     Serial.printf("HOME: parking XY at %.1f, %.1f mm\n",
                   Config::XY_PARK_X_DIRECTION * Config::XY_PARK_X_MM,
                   Config::XY_PARK_Y_DIRECTION * Config::XY_PARK_Y_MM);

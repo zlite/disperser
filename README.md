@@ -12,8 +12,9 @@ into a water bath.
 
 - **Button A — Home:** homes Z to L0, physical X to L1, and physical Y to L2,
   assigns each switch position as axis zero, then parks XY at the provisional
-  center target `(100 mm, 80 mm)`. Its directions are derived as the inverse of
-  the corresponding homing directions so that both axes leave their switches.
+  logical center target `(80 mm, 100 mm)`, corresponding to physical Y and X.
+  Before parking, each XY switch is released separately by 5 mm at homing
+  speed. Parking directions are derived as the inverse of homing directions.
 - **Button B — Start/Stop:** starts the cycle after homing; during motion it
   requests a controlled stop, returns XY to the swish center, and raises Z.
 - **Button C — Pause/Resume:** immediately pauses or resumes step generation.
