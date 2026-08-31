@@ -18,6 +18,10 @@ into a water bath.
   requests a controlled stop, returns XY to the swish center, and raises Z.
 - **Button C — Pause/Resume:** immediately pauses or resumes step generation.
 
+Motor holding current is disabled after homing/parking and after a cycle has
+fully stopped. It remains enabled during Pause so the tray and carriage retain
+their known positions.
+
 Each timed cycle records the current XY position, lowers the tray, repeats the
 selected motion until the configured duration expires, returns to center, and
 raises Z automatically. Wi-Fi status, machine state, and position are shown on

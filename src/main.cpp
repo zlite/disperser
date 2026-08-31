@@ -510,6 +510,14 @@ void motionTask(void*) {
         } else if (command == static_cast<uint32_t>(MotionCommand::Start)) {
             performCycle();
         }
+
+        // A command returns only after all requested motion has stopped. Drop
+        // the driver's global enable so the motors do not apply holding
+        // current while the machine is idle. Keep them energized while paused
+        // inside a command so the suspended tray cannot drift and lose its
+        // known position.
+        g_driver.enable(false);
+        Serial.println("MOTORS: idle holding current disabled");
     }
 }
 
