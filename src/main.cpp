@@ -438,6 +438,37 @@ bool performHome() {
     return true;
 }
 
+bool performPositiveXDirectionTest() {
+    g_state = DeviceState::Positioning;
+    g_homed = false;
+    g_stopRequested = false;
+    g_pauseRequested = false;
+    g_error = "";
+    if (!g_driver.enable(true)) return false;
+
+    // CoreXY logical +X is A+ and B+. Use a relative raw move so this test
+    // does not depend on the current coordinate estimate.
+    const float stepRate = Config::XY_HOME_SPEED_MM_S *
+                           Config::XY_STEPS_PER_MM;
+    const int32_t steps = lroundf(stepRate *
+                                  Config::XY_DIRECTION_TEST_SECONDS);
+    Serial.printf("DIRECTION TEST: logical +X for %.1f s: A+ B+ (%ld steps)\n",
+                  Config::XY_DIRECTION_TEST_SECONDS,
+                  static_cast<long>(steps));
+    const bool ok = moveRaw(g_motorASteps + steps,
+                            g_motorBSteps + steps,
+                            g_motorZSteps, stepRate,
+                            DeviceState::Positioning);
+    g_xMm = (g_motorASteps + g_motorBSteps) /
+            (2.0f * Config::XY_STEPS_PER_MM);
+    g_yMm = (g_motorASteps - g_motorBSteps) /
+            (2.0f * Config::XY_STEPS_PER_MM);
+    g_state = DeviceState::NotHomed;
+    Serial.println(ok ? "DIRECTION TEST: complete" :
+                        "DIRECTION TEST: stopped");
+    return ok;
+}
+
 void safeStopAndRaise() {
     g_pauseRequested = false;
     g_stopRequested = false;
@@ -549,7 +580,12 @@ void motionTask(void*) {
         uint32_t command = 0;
         xTaskNotifyWait(0, UINT32_MAX, &command, portMAX_DELAY);
         if (command == static_cast<uint32_t>(MotionCommand::Home)) {
-            if (performHome()) {
+            if (Config::XY_DIRECTION_TEST_MODE) {
+                if (!performPositiveXDirectionTest()) {
+                    g_error = "Positive X direction test stopped";
+                    g_state = DeviceState::Error;
+                }
+            } else if (performHome()) {
                 g_state = DeviceState::Ready;
             } else if (g_stopRequested) {
                 g_stopRequested = false;

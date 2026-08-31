@@ -61,6 +61,10 @@ constexpr float XY_PARK_Y_DIRECTION = X_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;
 constexpr float HOME_SPEED_MM_S = 5.0f;
 constexpr float XY_HOME_SPEED_MM_S = 2.0f;
 constexpr float XY_PARK_SPEED_MM_S = 5.0f;
+// Temporary calibration mode: Home performs a one-second logical +X jog
+// instead of the normal homing sequence.
+constexpr bool XY_DIRECTION_TEST_MODE = true;
+constexpr float XY_DIRECTION_TEST_SECONDS = 1.0f;
 // Conservative starting speed because motion currently begins without an
 // acceleration ramp. Raise this after reliable CoreXY testing.
 constexpr float XY_SPEED_MM_S = 5.0f;
