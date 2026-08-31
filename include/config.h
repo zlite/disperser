@@ -50,6 +50,7 @@ constexpr float XY_HOME_TRAVEL_MM = 250.0f;
 constexpr float XY_PARK_X_MM = 100.0f;
 constexpr float XY_PARK_Y_MM = 80.0f;
 constexpr float XY_SWITCH_RELEASE_MM = 5.0f;
+constexpr float XY_HOME_EDGE_RELEASE_MAX_MM = 10.0f;
 // Move away from the two switches using the inverse of each confirmed homing
 // direction.
 constexpr float XY_PARK_X_DIRECTION = X_HOME_DIRECTION_POSITIVE ? -1.0f : 1.0f;

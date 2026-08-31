@@ -348,6 +348,38 @@ bool homeOneAxis(uint8_t limitInput, bool stepA, bool dirA,
     return false;
 }
 
+bool releaseLimitForFreshEdge(uint8_t limitInput, bool stepA, bool dirA,
+                              bool stepB, bool dirB,
+                              uint32_t maximumSteps, float stepRate) {
+    setDirection(Config::MOTOR_A_DIR_PIN, dirA, Config::INVERT_MOTOR_A);
+    setDirection(Config::MOTOR_B_DIR_PIN, dirB, Config::INVERT_MOTOR_B);
+    const uint32_t interval = max(
+        Config::MIN_STEP_INTERVAL_US,
+        static_cast<uint32_t>(1000000.0f / max(1.0f, stepRate)));
+
+    for (uint32_t i = 0; i < maximumSteps; ++i) {
+        if (!motionCheckpoint(DeviceState::Homing)) return false;
+        bool limitActive = false;
+        if (!g_driver.readLimit(limitInput, limitActive)) {
+            Serial.printf("HOME: limit L%u read failed while releasing\n",
+                          limitInput);
+            g_error = "Limit input read failed; motion aborted";
+            return false;
+        }
+        if (!limitActive) return true;
+
+        const uint32_t stepStartedUs = micros();
+        pulsePins(stepA, stepB, false);
+        if (stepA) g_motorASteps += dirA ? 1 : -1;
+        if (stepB) g_motorBSteps += dirB ? 1 : -1;
+        waitForStepInterval(stepStartedUs, interval);
+    }
+
+    Serial.printf("HOME: limit L%u stayed active during release\n", limitInput);
+    g_error = "Limit stayed active while backing off";
+    return false;
+}
+
 bool performHome() {
     Serial.println("HOME: requested");
     g_error = "";
@@ -375,6 +407,16 @@ bool performHome() {
     // Confirmed direction mapping: physical X uses A/B in opposite directions,
     // while physical Y uses A/B together.
     const bool xPositive = Config::X_HOME_DIRECTION_POSITIVE;
+    Serial.println("HOME: ensuring L1 is open before X seek");
+    if (!releaseLimitForFreshEdge(
+            Config::X_LIMIT_INPUT,
+            true, !xPositive, true, xPositive,
+            lroundf(Config::XY_HOME_EDGE_RELEASE_MAX_MM *
+                     Config::XY_STEPS_PER_MM),
+            Config::XY_HOME_SPEED_MM_S * Config::XY_STEPS_PER_MM)) {
+        Serial.println("HOME: could not release L1");
+        return false;
+    }
     if (!homeOneAxis(Config::X_LIMIT_INPUT,
                      true, xPositive, true, !xPositive, false, false,
                      lroundf(Config::XY_HOME_TRAVEL_MM * Config::XY_STEPS_PER_MM),
@@ -385,6 +427,16 @@ bool performHome() {
     Serial.println("HOME: L1 hit; physical X at 0");
 
     const bool yPositive = Config::Y_HOME_DIRECTION_POSITIVE;
+    Serial.println("HOME: ensuring L2 is open before Y seek");
+    if (!releaseLimitForFreshEdge(
+            Config::Y_LIMIT_INPUT,
+            true, !yPositive, true, !yPositive,
+            lroundf(Config::XY_HOME_EDGE_RELEASE_MAX_MM *
+                     Config::XY_STEPS_PER_MM),
+            Config::XY_HOME_SPEED_MM_S * Config::XY_STEPS_PER_MM)) {
+        Serial.println("HOME: could not release L2");
+        return false;
+    }
     if (!homeOneAxis(Config::Y_LIMIT_INPUT,
                      true, yPositive, true, yPositive, false, false,
                      lroundf(Config::XY_HOME_TRAVEL_MM * Config::XY_STEPS_PER_MM),

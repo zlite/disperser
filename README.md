@@ -26,6 +26,9 @@ their known positions.
 Homing stops on the first active limit-switch sample. Limit-register reads are
 retried, and motion aborts if the Module 13.2 cannot provide a valid reading;
 the machine never continues homing using stale switch data.
+Before each XY homing seek, an already-active switch is backed off until it
+opens, forcing homing to observe a fresh inactive-to-active switch edge. A
+switch that remains active for 10 mm of backoff aborts the sequence.
 
 Each timed cycle records the current XY position, lowers the tray, repeats the
 selected motion until the configured duration expires, returns to center, and
