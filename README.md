@@ -49,10 +49,6 @@ motor to Z. Connect active-low (switch-to-ground) limits as follows:
 | L1 / P1 | Physical X home limit |
 | L2 / P2 | Physical Y home limit |
 
-The confirmed homing directions are negative for physical X and positive for
-physical Y. These are independent of the provisional post-home parking
-directions.
-
 The firmware uses the M5Stack-documented Basic Core pins:
 
 | Motor | STEP | DIR |
