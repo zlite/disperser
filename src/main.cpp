@@ -96,13 +96,40 @@ class StepperModule {
         return true;
     }
 
+    bool readLimit(uint8_t input, bool& active) {
+        uint8_t raw = 0;
+        bool readOk = false;
+
+        // The library discards I2C read errors and leaves its cached input
+        // byte unchanged. Read register 0 directly so homing can fail safely
+        // instead of continuing on a stale "switch open" value.
+        for (uint8_t attempt = 0; attempt < 3 && !readOk; ++attempt) {
+            Wire.beginTransmission(Config::MODULE_I2C_ADDRESS);
+            Wire.write(0x00);
+            if (Wire.endTransmission() == 0 &&
+                Wire.requestFrom(static_cast<int>(Config::MODULE_I2C_ADDRESS), 1) == 1) {
+                raw = Wire.read();
+                readOk = true;
+            } else {
+                delayMicroseconds(100);
+            }
+        }
+        if (!readOk) return false;
+
+        const auto decode = [raw](uint8_t channel) {
+            const bool high = (raw & (1U << channel)) != 0;
+            return Config::LIMITS_ACTIVE_LOW ? !high : high;
+        };
+        g_zLimitState = decode(Config::Z_LIMIT_INPUT) ? 1 : 0;
+        g_xLimitState = decode(Config::X_LIMIT_INPUT) ? 1 : 0;
+        g_yLimitState = decode(Config::Y_LIMIT_INPUT) ? 1 : 0;
+        active = decode(input);
+        return true;
+    }
+
     bool limitActive(uint8_t input) {
-        module_.getExtIOStatus();
-        const bool high = module_.ext_io_status[input] != 0;
-        const bool active = Config::LIMITS_ACTIVE_LOW ? !high : high;
-        if (input == Config::Z_LIMIT_INPUT) g_zLimitState = active ? 1 : 0;
-        if (input == Config::X_LIMIT_INPUT) g_xLimitState = active ? 1 : 0;
-        if (input == Config::Y_LIMIT_INPUT) g_yLimitState = active ? 1 : 0;
+        bool active = false;
+        readLimit(input, active);
         return active;
     }
 
@@ -299,15 +326,17 @@ bool homeOneAxis(uint8_t limitInput, bool stepA, bool dirA,
     const uint32_t interval = max(
         Config::MIN_STEP_INTERVAL_US,
         static_cast<uint32_t>(1000000.0f / max(1.0f, stepRate)));
-    uint8_t consecutiveHits = 0;
-
     for (uint32_t i = 0; i < maximumSteps; ++i) {
         if (!motionCheckpoint(DeviceState::Homing)) return false;
-        if (g_driver.limitActive(limitInput)) {
-            if (++consecutiveHits >= 3) return true;
-        } else {
-            consecutiveHits = 0;
+        bool limitActive = false;
+        if (!g_driver.readLimit(limitInput, limitActive)) {
+            Serial.printf("HOME: limit L%u read failed; motion aborted\n", limitInput);
+            g_error = "Limit input read failed; motion aborted";
+            return false;
         }
+        // Stop on the first asserted sample. Requiring repeated samples can
+        // miss a lever switch that releases again as the mechanism flexes.
+        if (limitActive) return true;
 
         const uint32_t stepStartedUs = micros();
         pulsePins(stepA, stepB, stepZ);
@@ -321,6 +350,7 @@ bool homeOneAxis(uint8_t limitInput, bool stepA, bool dirA,
 
 bool performHome() {
     Serial.println("HOME: requested");
+    g_error = "";
     g_state = DeviceState::Homing;
     g_homed = false;
     g_stopRequested = false;
@@ -525,7 +555,9 @@ void motionTask(void*) {
                 g_stopRequested = false;
                 g_state = DeviceState::NotHomed;
             } else {
-                g_error = "Home failed: check switches";
+                if (g_error.length() == 0) {
+                    g_error = "Home failed: check switches";
+                }
                 g_state = DeviceState::Error;
             }
         } else if (command == static_cast<uint32_t>(MotionCommand::Start)) {
