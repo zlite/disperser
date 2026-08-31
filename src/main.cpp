@@ -454,9 +454,9 @@ bool performHome() {
 
     g_state = DeviceState::Positioning;
     const float releaseX = Config::XY_PARK_X_DIRECTION *
-                           Config::XY_SWITCH_RELEASE_MM;
+                           Config::X_SWITCH_RELEASE_MM;
     const float releaseY = Config::XY_PARK_Y_DIRECTION *
-                           Config::XY_SWITCH_RELEASE_MM;
+                           Config::Y_SWITCH_RELEASE_MM;
 
     // Leave each switch separately at homing speed before starting the longer
     // CoreXY park move. This removes corner preload and avoids asking both

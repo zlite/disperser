@@ -52,7 +52,8 @@ constexpr float XY_PARK_Y_MM = 80.0f;
 // Temporarily stop after the two slow switch-release moves while physical XY
 // positioning is verified.
 constexpr bool XY_FULL_PARK_ENABLED = false;
-constexpr float XY_SWITCH_RELEASE_MM = 5.0f;
+constexpr float X_SWITCH_RELEASE_MM = 10.0f;
+constexpr float Y_SWITCH_RELEASE_MM = 7.5f;
 constexpr float XY_HOME_EDGE_RELEASE_MAX_MM = 10.0f;
 // Move away from the two switches using the inverse of each confirmed homing
 // direction.
