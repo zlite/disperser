@@ -474,14 +474,20 @@ bool performHome() {
         return false;
     }
 
-    Serial.printf("HOME: parking XY at %.1f, %.1f mm\n",
-                  Config::XY_PARK_X_DIRECTION * Config::XY_PARK_X_MM,
-                  Config::XY_PARK_Y_DIRECTION * Config::XY_PARK_Y_MM);
-    if (!moveTo(Config::XY_PARK_X_DIRECTION * Config::XY_PARK_X_MM,
-                Config::XY_PARK_Y_DIRECTION * Config::XY_PARK_Y_MM, 0,
-                Config::XY_PARK_SPEED_MM_S, DeviceState::Positioning)) {
-        Serial.println("HOME: parking stopped");
-        return false;
+    if (Config::XY_FULL_PARK_ENABLED) {
+        Serial.printf("HOME: parking XY at %.1f, %.1f mm\n",
+                      Config::XY_PARK_X_DIRECTION * Config::XY_PARK_X_MM,
+                      Config::XY_PARK_Y_DIRECTION * Config::XY_PARK_Y_MM);
+        if (!moveTo(Config::XY_PARK_X_DIRECTION * Config::XY_PARK_X_MM,
+                    Config::XY_PARK_Y_DIRECTION * Config::XY_PARK_Y_MM, 0,
+                    Config::XY_PARK_SPEED_MM_S, DeviceState::Positioning)) {
+            Serial.println("HOME: parking stopped");
+            return false;
+        }
+    } else {
+        Serial.printf("HOME: full park skipped; stopped at %.1f, %.1f mm\n",
+                      static_cast<double>(g_xMm),
+                      static_cast<double>(g_yMm));
     }
 
     g_homed = true;
