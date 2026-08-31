@@ -1,8 +1,9 @@
 # M5Stack Bug Disperser
 
 > **Temporary XY calibration mode:** pressing Home commands motor A positive
-> and motor B positive for one second at homing speed. This is the current
-> candidate for logical positive X; normal homing is disabled during this test.
+> and motor B negative for one second at homing speed. This is the current
+> candidate for physical positive X; normal homing is disabled during this test.
+> The previous test confirmed A positive plus B positive is physical positive Y.
 
 Firmware for an M5Stack Basic Core and the **Module13.2 Stepmotor Driver
 (M039)**. It controls a CoreXY plotter and a third stepper that lowers a tray

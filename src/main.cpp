@@ -438,7 +438,7 @@ bool performHome() {
     return true;
 }
 
-bool performPositiveXDirectionTest() {
+bool performPositiveYDirectionTest() {
     g_state = DeviceState::Positioning;
     g_homed = false;
     g_stopRequested = false;
@@ -446,17 +446,18 @@ bool performPositiveXDirectionTest() {
     g_error = "";
     if (!g_driver.enable(true)) return false;
 
-    // CoreXY logical +X is A+ and B+. Use a relative raw move so this test
-    // does not depend on the current coordinate estimate.
+    // CoreXY logical +Y is A+ and B-. Use a relative raw move so this test
+    // does not depend on the current coordinate estimate. The previous test
+    // confirmed A+/B+ is physical +Y on this machine.
     const float stepRate = Config::XY_HOME_SPEED_MM_S *
                            Config::XY_STEPS_PER_MM;
     const int32_t steps = lroundf(stepRate *
                                   Config::XY_DIRECTION_TEST_SECONDS);
-    Serial.printf("DIRECTION TEST: logical +X for %.1f s: A+ B+ (%ld steps)\n",
+    Serial.printf("DIRECTION TEST: logical +Y for %.1f s: A+ B- (%ld steps)\n",
                   Config::XY_DIRECTION_TEST_SECONDS,
                   static_cast<long>(steps));
     const bool ok = moveRaw(g_motorASteps + steps,
-                            g_motorBSteps + steps,
+                            g_motorBSteps - steps,
                             g_motorZSteps, stepRate,
                             DeviceState::Positioning);
     g_xMm = (g_motorASteps + g_motorBSteps) /
@@ -581,8 +582,8 @@ void motionTask(void*) {
         xTaskNotifyWait(0, UINT32_MAX, &command, portMAX_DELAY);
         if (command == static_cast<uint32_t>(MotionCommand::Home)) {
             if (Config::XY_DIRECTION_TEST_MODE) {
-                if (!performPositiveXDirectionTest()) {
-                    g_error = "Positive X direction test stopped";
+                if (!performPositiveYDirectionTest()) {
+                    g_error = "Positive Y direction test stopped";
                     g_state = DeviceState::Error;
                 }
             } else if (performHome()) {
