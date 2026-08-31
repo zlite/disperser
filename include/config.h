@@ -35,7 +35,9 @@ constexpr bool LIMITS_ACTIVE_LOW = true;
 // Initial direction assumptions for the first XY homing test. Toggle the
 // relevant value if an axis moves away from its switch.
 constexpr bool X_HOME_DIRECTION_POSITIVE = false;
-constexpr bool Y_HOME_DIRECTION_POSITIVE = false;
+// Confirmed on the physical machine: Y must move in the positive homing
+// direction to reach the L2 limit switch.
+constexpr bool Y_HOME_DIRECTION_POSITIVE = true;
 
 // Motion calibration. Defaults assume a 200-step motor, 20-tooth GT2 pulley,
 // 2 mm belt pitch, and 1/8 microstepping.
